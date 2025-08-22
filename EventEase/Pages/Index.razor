@@ -1,0 +1,78 @@
+﻿@page "/"
+@page "/events"
+@using EventEase.Data
+@using EventEase.Components
+@inject EventService EventService
+
+<PageTitle>EventEase - Discover Amazing Events</PageTitle>
+
+<div class="hero-section mb-5">
+    <div class="container">
+        <h1 class="display-4 text-center mb-4">Welcome to EventEase</h1>
+        <p class="lead text-center">Discover and register for amazing events happening near you</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Upcoming Events</h2>
+            <p class="text-muted">Browse our collection of exciting events</p>
+        </div>
+    </div>
+
+    @if (events == null)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading events...</p>
+        </div>
+    }
+    else if (events.Count == 0)
+    {
+        <div class="alert alert-info">
+            <h4>No events available</h4>
+            <p>Please check back later for upcoming events.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var eventItem in events)
+            {
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <EventCard Event="eventItem" />
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4rem 0;
+        margin: -2rem -15px 0 -15px;
+    }
+</style>
+
+@code {
+    private List<Event>? events;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            events = await EventService.GetEventsAsync();
+            StateHasChanged(); // Force re-render
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading events: {ex.Message}");
+            events = new List<Event>(); // Empty list to show "no events"
+        }
+    }
+}

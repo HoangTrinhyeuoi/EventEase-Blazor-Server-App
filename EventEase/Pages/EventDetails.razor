@@ -1,0 +1,113 @@
+﻿@page "/event/{eventId:int}"
+@using EventEase.Data
+@inject EventService EventService
+@inject NavigationManager Navigation
+
+<PageTitle>@(currentEvent?.Name ?? "Event Details") - EventEase</PageTitle>
+
+@if (currentEvent == null)
+{
+    <div class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@currentEvent.Name</li>
+            </ol>
+        </nav>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h1 class="card-title mb-0">@currentEvent.Name</h1>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h5>Event Details</h5>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                        <strong>Date:</strong> @currentEvent.Date.ToString("MMMM dd, yyyy")
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-clock me-2 text-primary"></i>
+                                        <strong>Time:</strong> @currentEvent.Date.ToString("h:mm tt")
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-map-marker-alt me-2 text-primary"></i>
+                                        <strong>Location:</strong> @currentEvent.Location
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-tag me-2 text-primary"></i>
+                                        <strong>Category:</strong> @currentEvent.Category
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Registration Info</h5>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="fas fa-dollar-sign me-2 text-success"></i>
+                                        <strong>Price:</strong> $@currentEvent.Price.ToString("F2")
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-users me-2 text-info"></i>
+                                        <strong>Attendees:</strong> @currentEvent.CurrentAttendees / @currentEvent.MaxAttendees
+                                    </li>
+                                </ul>
+                                <div class="progress mb-3" style="height: 8px;">
+                                    <div class="progress-bar"
+                                         role="progressbar"
+                                         style="width: @(((double)currentEvent.CurrentAttendees / currentEvent.MaxAttendees) * 100)%">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h5>Description</h5>
+                        <p class="text-muted">@currentEvent.Description</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <a href="/register/@currentEvent.Id" class="btn btn-primary btn-lg w-100 mb-3">
+                            Register for Event
+                        </a>
+                        <a href="/" class="btn btn-outline-secondary w-100">
+                            Back to Events
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int EventId { get; set; }
+    private Event? currentEvent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentEvent = await EventService.GetEventByIdAsync(EventId);
+        if (currentEvent == null)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+}

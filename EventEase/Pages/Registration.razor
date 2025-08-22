@@ -1,0 +1,389 @@
+﻿@page "/register/{eventId:int}"
+@using EventEase.Data
+@using EventEase.Services
+@using System.ComponentModel.DataAnnotations
+@inject EventService EventService
+@inject UserSessionService SessionService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Register for @(currentEvent?.Name ?? "Event") - EventEase</PageTitle>
+
+@if (currentEvent == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3 text-muted">Loading event details...</p>
+    </div>
+}
+else
+{
+    <div class="container">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/event/@EventId">@currentEvent.Name</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Registration</li>
+            </ol>
+        </nav>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card shadow">
+                    <div class="card-header bg-gradient-success text-white">
+                        <h1 class="card-title mb-0 h3">
+                            <i class="fas fa-user-plus me-2"></i>Register for @currentEvent.Name
+                        </h1>
+                    </div>
+                    <div class="card-body">
+                        @if (registrationSuccess)
+                        {
+                            <div class="alert alert-success border-0 shadow-sm">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-check-circle fa-2x text-success me-3"></i>
+                                    <div>
+                                        <h4 class="alert-heading mb-1">Registration Successful!</h4>
+                                        <p class="mb-2">Thank you for registering for @currentEvent.Name.</p>
+                                        <small class="text-muted">Registration ID: #@registrationId</small>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="d-flex gap-2">
+                                    <a href="/" class="btn btn-primary">Browse More Events</a>
+                                    <button class="btn btn-outline-secondary" @onclick="ShowRegistrationDetails">
+                                        View Registration Details
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                        else if (registrationError != null)
+                        {
+                            <div class="alert alert-danger border-0 shadow-sm">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-exclamation-triangle fa-2x text-danger me-3"></i>
+                                    <div>
+                                        <h5 class="alert-heading mb-1">Registration Failed</h5>
+                                        <p class="mb-0">@registrationError</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!registrationSuccess)
+                        {
+                            <EditForm Model="@registrationModel" OnValidSubmit="@HandleRegistration" class="needs-validation" novalidate>
+                                <DataAnnotationsValidator />
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="name" class="form-label required">
+                                                <i class="fas fa-user me-1"></i>Full Name
+                                            </label>
+                                            <InputText @bind-Value="registrationModel.Name" 
+                                                     class="@GetFieldCssClass("Name")" 
+                                                     id="name" 
+                                                     placeholder="Enter your full name"
+                                                     @onblur="ValidateField" />
+                                            <ValidationMessage For="@(() => registrationModel.Name)" class="invalid-feedback d-block" />
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="email" class="form-label required">
+                                                <i class="fas fa-envelope me-1"></i>Email Address
+                                            </label>
+                                            <InputText @bind-Value="registrationModel.Email" 
+                                                     class="@GetFieldCssClass("Email")" 
+                                                     id="email" 
+                                                     type="email"
+                                                     placeholder="Enter your email address"
+                                                     @onblur="ValidateField" />
+                                            <ValidationMessage For="@(() => registrationModel.Email)" class="invalid-feedback d-block" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label required">
+                                        <i class="fas fa-phone me-1"></i>Phone Number
+                                    </label>
+                                    <InputText @bind-Value="registrationModel.Phone" 
+                                             class="@GetFieldCssClass("Phone")" 
+                                             id="phone" 
+                                             placeholder="+1 (555) 123-4567"
+                                             @onblur="ValidateField" />
+                                    <ValidationMessage For="@(() => registrationModel.Phone)" class="invalid-feedback d-block" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="requirements" class="form-label">
+                                        <i class="fas fa-clipboard-list me-1"></i>Special Requirements
+                                        <small class="text-muted">(Optional)</small>
+                                    </label>
+                                    <InputTextArea @bind-Value="registrationModel.SpecialRequirements" 
+                                                 class="form-control" 
+                                                 id="requirements" 
+                                                 rows="3"
+                                                 placeholder="Any dietary restrictions, accessibility needs, or other requirements..."></InputTextArea>
+                                    <ValidationMessage For="@(() => registrationModel.SpecialRequirements)" class="invalid-feedback d-block" />
+                                </div>
+
+                                <div class="mb-4">
+                                    <div class="form-check">
+                                        <InputCheckbox @bind-Value="registrationModel.AgreeToTerms" 
+                                                     class="@GetCheckboxCssClass("AgreeToTerms")" 
+                                                     id="terms" />
+                                        <label class="form-check-label" for="terms">
+                                            I agree to the <a href="#" @onclick:preventDefault="true" @onclick="ShowTerms">Terms and Conditions</a>
+                                            and <a href="#" @onclick:preventDefault="true" @onclick="ShowPrivacyPolicy">Privacy Policy</a>
+                                        </label>
+                                        <ValidationMessage For="@(() => registrationModel.AgreeToTerms)" class="invalid-feedback d-block" />
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="/event/@EventId" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>Back to Event
+                                    </a>
+                                    <button type="submit" class="btn btn-success btn-lg" disabled="@isSubmitting">
+                                        @if (isSubmitting)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                            <span>Processing...</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-credit-card me-2"></i>
+                                            <span>Register Now - $@currentEvent.Price.ToString("F2")</span>
+                                        }
+                                    </button>
+                                </div>
+                            </EditForm>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Event Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">@currentEvent.Name</h6>
+                        <ul class="list-unstyled small">
+                            <li class="mb-2">
+                                <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                <strong>@currentEvent.Date.ToString("MMMM dd, yyyy")</strong>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-clock me-2 text-primary"></i>
+                                @currentEvent.Date.ToString("h:mm tt")
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-map-marker-alt me-2 text-primary"></i>
+                                @currentEvent.Location
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-tag me-2 text-secondary"></i>
+                                @currentEvent.Category
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-dollar-sign me-2 text-success"></i>
+                                <strong>$@currentEvent.Price.ToString("F2")</strong>
+                            </li>
+                        </ul>
+                        
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-muted">Registration Status</small>
+                                <small class="@(isEventFull ? "text-danger" : "text-success")">
+                                    @(isEventFull ? "FULL" : "AVAILABLE")
+                                </small>
+                            </div>
+                            <div class="progress mb-2" style="height: 8px;">
+                                <div class="progress-bar @(isEventFull ? "bg-danger" : "bg-success")" 
+                                     role="progressbar" 
+                                     style="width: @(((double)currentEvent.CurrentAttendees / currentEvent.MaxAttendees) * 100)%">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                @currentEvent.CurrentAttendees of @currentEvent.MaxAttendees spots taken
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                @if (userSession?.ViewedEvents?.Count > 1)
+                {
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-history me-2"></i>Recently Viewed</h6>
+                        </div>
+                        <div class="card-body">
+                            <small class="text-muted">
+                                You've viewed @userSession.ViewedEvents.Count events in this session
+                            </small>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .form-control:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    
+    .is-valid {
+        border-color: #28a745;
+    }
+    
+    .card {
+        border: none;
+        border-radius: 12px;
+    }
+    
+    .shadow {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
+@code {
+    [Parameter] public int EventId { get; set; }
+    
+    private Event? currentEvent;
+    private RegistrationFormModel registrationModel = new();
+    private UserSession? userSession;
+    private string sessionId = string.Empty;
+    
+    private bool registrationSuccess = false;
+    private string? registrationError = null;
+    private int? registrationId = null;
+    private bool isSubmitting = false;
+    private bool isEventFull => currentEvent != null && currentEvent.CurrentAttendees >= currentEvent.MaxAttendees;
+    
+    private readonly HashSet<string> validatedFields = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        sessionId = Guid.NewGuid().ToString();
+        userSession = SessionService.GetOrCreateSession(sessionId);
+        
+        currentEvent = await EventService.GetEventByIdAsync(EventId);
+        if (currentEvent == null)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        SessionService.AddViewedEvent(sessionId, EventId);
+
+        if (isEventFull)
+        {
+            registrationError = "This event is fully booked. Registration is not available.";
+        }
+    }
+
+    private async Task HandleRegistration()
+    {
+        if (isEventFull || isSubmitting) return;
+
+        isSubmitting = true;
+        registrationError = null;
+
+        try
+        {
+            var result = await EventService.RegisterForEventAsync(EventId, registrationModel);
+            
+            if (result.Success)
+            {
+                registrationSuccess = true;
+                registrationId = result.RegistrationId;
+                SessionService.AddRegisteredEvent(sessionId, EventId);
+                SessionService.SetUserInfo(sessionId, registrationModel.Name, registrationModel.Email);
+                
+                await JSRuntime.InvokeVoidAsync("scrollTo", 0, 0);
+            }
+            else
+            {
+                registrationError = result.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            registrationError = "An unexpected error occurred. Please try again.";
+            Console.WriteLine($"Registration error: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ValidateField()
+    {
+        StateHasChanged();
+    }
+
+    private string GetFieldCssClass(string fieldName)
+    {
+        var baseClass = "form-control";
+        return IsFieldValid(fieldName) ? $"{baseClass} is-valid" : baseClass;
+    }
+
+    private string GetCheckboxCssClass(string fieldName)
+    {
+        var baseClass = "form-check-input";
+        return !IsFieldValid(fieldName) ? $"{baseClass} is-invalid" : baseClass;
+    }
+
+    private bool IsFieldValid(string fieldName)
+    {
+        return fieldName switch
+        {
+            "Name" => !string.IsNullOrWhiteSpace(registrationModel.Name) && registrationModel.Name.Length <= 100,
+            "Email" => !string.IsNullOrWhiteSpace(registrationModel.Email) && 
+                      System.Text.RegularExpressions.Regex.IsMatch(registrationModel.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"),
+            "Phone" => !string.IsNullOrWhiteSpace(registrationModel.Phone) &&
+                      System.Text.RegularExpressions.Regex.IsMatch(registrationModel.Phone, @"^[\+]?[1-9][\d]{0,15}$"),
+            "AgreeToTerms" => registrationModel.AgreeToTerms,
+            _ => false
+        };
+    }
+
+    private async Task ShowRegistrationDetails()
+    {
+        if (registrationId.HasValue)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Registration ID: #{registrationId}\nEvent: {currentEvent?.Name}\nRegistrant: {registrationModel.Name}");
+        }
+    }
+
+    private async Task ShowTerms()
+    {
+        await JSRuntime.InvokeVoidAsync("alert", "Terms and Conditions: By registering, you agree to attend the event and follow all event guidelines.");
+    }
+
+    private async Task ShowPrivacyPolicy()
+    {
+        await JSRuntime.InvokeVoidAsync("alert", "Privacy Policy: Your information will be used only for event management and will not be shared with third parties.");
+    }
+}
