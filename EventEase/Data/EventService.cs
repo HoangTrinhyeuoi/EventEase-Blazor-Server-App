@@ -34,7 +34,7 @@ public class EventService
             new Event
             {
                 Id = 2,
-                Name = "Corporate Leadership Workshop",
+                Name = "Kaopiz Software New Year Party 2026",
                 Date = DateTime.Now.AddDays(22),
                 Location = "Downtown Business Center, NY",
                 Description = "Develop your leadership skills with expert facilitators and hands-on exercises. Learn modern management techniques and build your professional network.",
@@ -47,7 +47,7 @@ public class EventService
             new Event
             {
                 Id = 3,
-                Name = "Annual Charity Gala",
+                Name = "New office expansion ceremony",
                 Date = DateTime.Now.AddDays(45),
                 Location = "Grand Ballroom, Chicago, IL",
                 Description = "An elegant evening supporting local charities with dinner, entertainment, and auction. Join us in making a difference in our community.",
